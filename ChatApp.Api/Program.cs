@@ -1,4 +1,29 @@
+using ChatApp.Api.Data;
+using ChatApp.Api.Hubs;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Database Connection
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=chat.db"));
+
+// SignalR
+builder.Services.AddSignalR();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 
 // Add services to the container.
 
@@ -20,6 +45,10 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseCors();
 app.MapControllers();
+
+// Map the SignalR Hub
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();
