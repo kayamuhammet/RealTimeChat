@@ -1,0 +1,12 @@
+<div>
+    <input [(ngModel)]="username" placeholder="Adınız" />
+    <input [(ngModel)]="message" placeholder="Mesaj" (keyup.enter)="send()" />
+    <button (click)="send()">Gönder</button>
+</div>
+  
+<hr />
+  
+<div *ngFor="let msg of signalRService.messages">
+    <strong>{{ msg.user }}:</strong> {{ msg.message }}
+</div>
+  
