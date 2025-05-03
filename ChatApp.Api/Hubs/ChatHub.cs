@@ -13,6 +13,16 @@ public class ChatHub : Hub
         await Clients.All.SendAsync("ReceiveMessage", user, message);
     }
 
+    public async Task SendPrivateMessage(string fromUser, string toUser, string message)
+    {
+        var targetUser = _users.FirstOrDefault(u => u.Value.UserName == toUser);
+        if (targetUser.Value != null)
+        {
+            await Clients.Client(targetUser.Key).SendAsync("ReceivePrivateMessage", fromUser, toUser, message);
+            await Clients.Caller.SendAsync("ReceivePrivateMessage", fromUser, toUser, message);
+        }
+    }
+
     public override async Task OnConnectedAsync()
     {
         var userName = Context.GetHttpContext()?.Request.Query["user"].ToString() ?? "Anonymous";

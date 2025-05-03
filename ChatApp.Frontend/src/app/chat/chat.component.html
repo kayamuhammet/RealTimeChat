@@ -1,27 +1,56 @@
 <div class="chat-container">
-    <div class="chat-header">
-      <h1>Welcome to Angular Chat App</h1>
-      <h2>Gerçek Zamanlı Sohbet</h2>
-      <div class="user-input" *ngIf="!isConnected">
-        <input [(ngModel)]="username" placeholder="Kullanıcı adınızı girin" />
-        <button (click)="connect()" [disabled]="!username">Bağlan</button>
-      </div>
-      <div class="user-info" *ngIf="isConnected">
-        Hoş geldin, {{ username }}!
+  <div class="chat-header">
+    <h2>Gerçek Zamanlı Sohbet</h2>
+    <div class="user-input" *ngIf="!isConnected">
+      <input [(ngModel)]="username" placeholder="Kullanıcı adınızı girin" />
+      <button (click)="connect()" [disabled]="!username">Bağlan</button>
+    </div>
+    <div class="user-info" *ngIf="isConnected">
+      Hoş geldin, {{ username }}!
+    </div>
+  </div>
+
+  <div class="chat-layout">
+    <div class="user-list">
+      <h3>Kullanıcılar</h3>
+      <div class="user-item" *ngFor="let user of signalRService.users$ | async">
+        <span class="user-name">{{ user.userName }}</span>
+        <span class="status-indicator" [class.online]="user.isOnline" [class.offline]="!user.isOnline">
+          {{ user.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
+        </span>
+        <button *ngIf="user.isOnline && user.userName !== username" 
+                (click)="startPrivateChat(user.userName)"
+                class="private-chat-btn">
+          Özel Mesaj
+        </button>
       </div>
     </div>
 
-    <app-user-list></app-user-list>
+    <div class="chat-area">
+      <div class="chat-tabs">
+        <button [class.active]="!isPrivateChat" (click)="switchToPublicChat()">Genel Sohbet</button>
+        <button [class.active]="isPrivateChat" (click)="switchToPrivateChat()" *ngIf="selectedUser">
+          {{ selectedUser }} ile Özel Sohbet
+        </button>
+      </div>
 
-    <div class="chat-messages">
-      <div *ngFor="let msg of signalRService.messages" class="message">
-        <strong>{{ msg.user }}:</strong> {{ msg.message }}
+      <div class="chat-messages">
+        <div *ngIf="!isPrivateChat">
+          <div *ngFor="let msg of signalRService.messages" class="message">
+            <strong>{{ msg.user }}:</strong> {{ msg.message }}
+          </div>
+        </div>
+        <div *ngIf="isPrivateChat">
+          <div *ngFor="let msg of getPrivateMessages()" class="message private">
+            <strong>{{ msg.fromUser }} -> {{ msg.toUser }}:</strong> {{ msg.message }}
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input [(ngModel)]="message" placeholder="Mesajınızı yazın..." (keyup.enter)="send()" />
+        <button (click)="send()" [disabled]="!message">Gönder</button>
       </div>
     </div>
-
-    <div class="chat-input" *ngIf="isConnected">
-      <input [(ngModel)]="message" placeholder="Mesajınızı yazın..." (keyup.enter)="send()" />
-      <button (click)="send()" [disabled]="!message">Gönder</button>
-    </div>
+  </div>
 </div>
-  

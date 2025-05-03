@@ -8,6 +8,13 @@ export interface UserStatus {
   lastSeen: Date;
 }
 
+export interface PrivateMessage {
+  fromUser: string;
+  toUser: string;
+  message: string;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,6 +23,7 @@ export class SignalrService {
   private hubConnection!: signalR.HubConnection;
   
   public messages: {user: string, message: string}[] = [];
+  public privateMessages: PrivateMessage[] = [];
   public users$ = new BehaviorSubject<UserStatus[]>([]);
 
   public startConnection(userName: string)
@@ -36,6 +44,15 @@ export class SignalrService {
       this.messages.push({user, message});
     });
 
+    this.hubConnection.on('ReceivePrivateMessage', (fromUser: string, toUser: string, message: string) => {
+      this.privateMessages.push({
+        fromUser,
+        toUser,
+        message,
+        timestamp: new Date()
+      });
+    });
+
     this.hubConnection.on('UserStatusChanged', (users: UserStatus[]) => {
       this.users$.next(users);
     });
@@ -45,6 +62,12 @@ export class SignalrService {
   {
     this.hubConnection.invoke('SendMessage', user, message)
       .catch(err => console.error('Mesaj gönderilemedi:', err));
+  }
+
+  public sendPrivateMessage(fromUser: string, toUser: string, message: string)
+  {
+    this.hubConnection.invoke('SendPrivateMessage', fromUser, toUser, message)
+      .catch(err => console.error('Özel mesaj gönderilemedi:', err));
   }
 
   private getUserList()
