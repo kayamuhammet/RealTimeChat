@@ -1,12 +1,27 @@
-<div>
-    <input [(ngModel)]="username" placeholder="Adınız" />
-    <input [(ngModel)]="message" placeholder="Mesaj" (keyup.enter)="send()" />
-    <button (click)="send()">Gönder</button>
-</div>
-  
-<hr />
-  
-<div *ngFor="let msg of signalRService.messages">
-    <strong>{{ msg.user }}:</strong> {{ msg.message }}
+<div class="chat-container">
+    <div class="chat-header">
+      <h1>Welcome to Angular Chat App</h1>
+      <h2>Gerçek Zamanlı Sohbet</h2>
+      <div class="user-input" *ngIf="!isConnected">
+        <input [(ngModel)]="username" placeholder="Kullanıcı adınızı girin" />
+        <button (click)="connect()" [disabled]="!username">Bağlan</button>
+      </div>
+      <div class="user-info" *ngIf="isConnected">
+        Hoş geldin, {{ username }}!
+      </div>
+    </div>
+
+    <app-user-list></app-user-list>
+
+    <div class="chat-messages">
+      <div *ngFor="let msg of signalRService.messages" class="message">
+        <strong>{{ msg.user }}:</strong> {{ msg.message }}
+      </div>
+    </div>
+
+    <div class="chat-input" *ngIf="isConnected">
+      <input [(ngModel)]="message" placeholder="Mesajınızı yazın..." (keyup.enter)="send()" />
+      <button (click)="send()" [disabled]="!message">Gönder</button>
+    </div>
 </div>
   

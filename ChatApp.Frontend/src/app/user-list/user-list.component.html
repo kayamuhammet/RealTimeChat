@@ -1,0 +1,12 @@
+<div class="user-list">
+    <h3>Kullanıcılar</h3>
+    <div class="user-item" *ngFor="let user of users">
+      <span class="user-name">{{ user.userName }}</span>
+      <span class="status-indicator" [class.online]="user.isOnline" [class.offline]="!user.isOnline">
+        {{ user.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
+      </span>
+      <span class="last-seen" *ngIf="!user.isOnline">
+        Son görülme: {{ user.lastSeen | date:'short' }}
+      </span>
+    </div>
+</div>
