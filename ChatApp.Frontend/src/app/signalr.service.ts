@@ -21,13 +21,16 @@ export interface PrivateMessage {
 export class SignalrService {
 
   private hubConnection!: signalR.HubConnection;
+  private username: string = '';
   
   public messages: {user: string, message: string}[] = [];
   public privateMessages: PrivateMessage[] = [];
   public users$ = new BehaviorSubject<UserStatus[]>([]);
+  public typingUsers = new Map<string, boolean>();
 
   public startConnection(userName: string)
   {
+    this.username = userName;
     this.hubConnection = new signalR.HubConnectionBuilder()
       .withUrl(`http://localhost:5011/chathub?user=${userName}`)
       .withAutomaticReconnect()
@@ -56,6 +59,14 @@ export class SignalrService {
     this.hubConnection.on('UserStatusChanged', (users: UserStatus[]) => {
       this.users$.next(users);
     });
+
+    this.hubConnection.on('UserTypingStatusChanged', (userName: string, isTyping: boolean) => {
+      this.typingUsers.set(userName, isTyping);
+    });
+
+    this.hubConnection.on('UserTypingStatusChangedPrivate', (fromUser: string, isTyping: boolean) => {
+      this.typingUsers.set(fromUser, isTyping);
+    });
   }
 
   public sendMessage(user: string, message: string)
@@ -68,6 +79,16 @@ export class SignalrService {
   {
     this.hubConnection.invoke('SendPrivateMessage', fromUser, toUser, message)
       .catch(err => console.error('Özel mesaj gönderilemedi:', err));
+  }
+
+  public sendTypingStatus(isTyping: boolean, toUser?: string) {
+    if (toUser) {
+      this.hubConnection.invoke('UserIsTypingPrivate', this.username, toUser, isTyping)
+        .catch(err => console.error('Yazma durumu gönderilemedi:', err));
+    } else {
+      this.hubConnection.invoke('UserIsTyping', this.username, isTyping)
+        .catch(err => console.error('Yazma durumu gönderilemedi:', err));
+    }
   }
 
   private getUserList()

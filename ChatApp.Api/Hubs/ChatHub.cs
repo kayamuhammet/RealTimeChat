@@ -23,6 +23,21 @@ public class ChatHub : Hub
         }
     }
 
+    public async Task UserIsTyping(string userName, bool isTyping)
+    {
+        await Clients.All.SendAsync("UserTypingStatusChanged", userName, isTyping);
+    }
+
+    public async Task UserIsTypingPrivate(string fromUser, string toUser, bool isTyping)
+    {
+        var targetUser = _users.FirstOrDefault(u => u.Value.UserName == toUser);
+        if (targetUser.Value != null)
+        {
+            await Clients.Client(targetUser.Key).SendAsync("UserTypingStatusChangedPrivate", fromUser, isTyping);
+            await Clients.Caller.SendAsync("UserTypingStatusChangedPrivate", fromUser, isTyping);
+        }
+    }
+
     public override async Task OnConnectedAsync()
     {
         var userName = Context.GetHttpContext()?.Request.Query["user"].ToString() ?? "Anonymous";
@@ -40,7 +55,7 @@ public class ChatHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if(_users.TryRemove(Context.ConnectionId, out var userStatus))
+        if (_users.TryRemove(Context.ConnectionId, out var userStatus))
         {
             userStatus.IsOnline = false;
             userStatus.LastSeen = DateTime.UtcNow;

@@ -16,6 +16,7 @@ export class ChatComponent implements OnInit {
   isConnected = false;
   isPrivateChat = false;
   selectedUser: string | null = null;
+  private typingTimeout: any;
 
   constructor(public signalRService: SignalrService) {}
 
@@ -28,12 +29,24 @@ export class ChatComponent implements OnInit {
     }
   }
 
+  onMessageInput(): void {
+    if (this.message.trim()) {
+      if (this.isPrivateChat && this.selectedUser) {
+        this.signalRService.sendTypingStatus(true, this.selectedUser);
+      } else {
+        this.signalRService.sendTypingStatus(true);
+      }
+    }
+  }
+
   send(): void {
     if (this.message) {
       if (this.isPrivateChat && this.selectedUser) {
         this.signalRService.sendPrivateMessage(this.username, this.selectedUser, this.message);
+        this.signalRService.sendTypingStatus(false, this.selectedUser);
       } else {
         this.signalRService.sendMessage(this.username, this.message);
+        this.signalRService.sendTypingStatus(false);
       }
       this.message = '';
     }

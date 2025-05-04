@@ -39,16 +39,29 @@
           <div *ngFor="let msg of signalRService.messages" class="message">
             <strong>{{ msg.user }}:</strong> {{ msg.message }}
           </div>
+          <div *ngFor="let user of signalRService.users$ | async" class="typing-indicator">
+            <span *ngIf="signalRService.typingUsers.get(user.userName) && user.userName !== username">
+              {{ user.userName }} yazıyor...
+            </span>
+          </div>
         </div>
         <div *ngIf="isPrivateChat">
           <div *ngFor="let msg of getPrivateMessages()" class="message private">
             <strong>{{ msg.fromUser }} -> {{ msg.toUser }}:</strong> {{ msg.message }}
           </div>
+          <div class="typing-indicator">
+            <span *ngIf="selectedUser && signalRService.typingUsers.get(selectedUser)">
+              {{ selectedUser }} yazıyor...
+            </span>
+          </div>
         </div>
       </div>
 
       <div class="chat-input">
-        <input [(ngModel)]="message" placeholder="Mesajınızı yazın..." (keyup.enter)="send()" />
+        <input [(ngModel)]="message" 
+               placeholder="Mesajınızı yazın..." 
+               (keyup.enter)="send()"
+               (input)="onMessageInput()" />
         <button (click)="send()" [disabled]="!message">Gönder</button>
       </div>
     </div>
