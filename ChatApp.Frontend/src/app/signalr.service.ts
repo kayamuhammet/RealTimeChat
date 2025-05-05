@@ -181,6 +181,16 @@ export class SignalrService {
         }
       }, 5000);
     });
+
+    this.hubConnection.on('UserNameExists', (message: string) => {
+      alert(message);
+    });
+
+    this.hubConnection.on('ForceDisconnect', (message: string) => {
+      alert(message);
+      this.hubConnection.stop();
+      window.location.reload();
+    });
   }
 
   public sendMessage(user: string, message: string)
@@ -202,6 +212,16 @@ export class SignalrService {
     } else {
       this.hubConnection.invoke('UserIsTyping', this.username, isTyping)
         .catch(err => console.error('Yazma durumu gönderilemedi:', err));
+    }
+  }
+
+  public clearTypingStatus(toUser?: string) {
+    if (toUser) {
+      this.hubConnection.invoke('UserIsTypingPrivate', this.username, toUser, false)
+        .catch(err => console.error('Yazma durumu temizlenemedi:', err));
+    } else {
+      this.hubConnection.invoke('UserIsTyping', this.username, false)
+        .catch(err => console.error('Yazma durumu temizlenemedi:', err));
     }
   }
 

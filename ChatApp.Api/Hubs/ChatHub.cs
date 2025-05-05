@@ -72,25 +72,21 @@ public class ChatHub : Hub
     {
         var userName = Context.GetHttpContext()?.Request.Query["user"].ToString() ?? "Anonymous";
         
-        var existingUser = _users.Values.FirstOrDefault(u => u.UserName == userName);
-        if (existingUser != null)
+        var existingOnlineUser = _users.Values.FirstOrDefault(u => u.UserName == userName && u.IsOnline);
+        if (existingOnlineUser != null)
         {
-            existingUser.IsOnline = true;
-            existingUser.LastSeen = DateTime.UtcNow;
-            existingUser.ConnectionId = Context.ConnectionId;
-            _users.TryAdd(Context.ConnectionId, existingUser);
+            await Clients.Client(existingOnlineUser.ConnectionId).SendAsync("ForceDisconnect", "Bu kullanıcı adı başka bir oturumda kullanılıyor.");
+            _users.TryRemove(existingOnlineUser.ConnectionId, out _);
         }
-        else
+
+        var userStatus = new UserStatus
         {
-            var userStatus = new UserStatus
-            {
-                UserName = userName,
-                IsOnline = true,
-                LastSeen = DateTime.UtcNow,
-                ConnectionId = Context.ConnectionId
-            };
-            _users.TryAdd(Context.ConnectionId, userStatus);
-        }
+            UserName = userName,
+            IsOnline = true,
+            LastSeen = DateTime.UtcNow,
+            ConnectionId = Context.ConnectionId
+        };
+        _users.TryAdd(Context.ConnectionId, userStatus);
 
         await Clients.All.SendAsync("UserStatusChanged", _users.Values.ToList());
         await Clients.All.SendAsync("ConnectionNotification", userName, true, DateTime.UtcNow);
@@ -101,10 +97,9 @@ public class ChatHub : Hub
     {
         if (_users.TryGetValue(Context.ConnectionId, out var userStatus))
         {
-            userStatus.IsOnline = false;
-            userStatus.LastSeen = DateTime.UtcNow;
-            await Clients.All.SendAsync("UserStatusChanged", _users.Values.ToList());
             await Clients.All.SendAsync("ConnectionNotification", userStatus.UserName, false, DateTime.UtcNow);
+            _users.TryRemove(Context.ConnectionId, out _);
+            await Clients.All.SendAsync("UserStatusChanged", _users.Values.ToList());
         }
         await base.OnDisconnectedAsync(exception);
     }

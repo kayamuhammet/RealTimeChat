@@ -35,6 +35,12 @@ export class ChatComponent implements OnInit {
       } else {
         this.signalRService.sendTypingStatus(true);
       }
+    } else {
+      if (this.isPrivateChat && this.selectedUser) {
+        this.signalRService.clearTypingStatus(this.selectedUser);
+      } else {
+        this.signalRService.clearTypingStatus();
+      }
     }
   }
 
