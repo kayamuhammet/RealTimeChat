@@ -28,6 +28,13 @@ export interface ConnectionNotification {
   timestamp: Date;
 }
 
+export interface Notification {
+  fromUser: string;
+  message: string;
+  isPrivate: boolean;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -42,6 +49,7 @@ export class SignalrService {
   public users$ = new BehaviorSubject<UserStatus[]>([]);
   public typingUsers = new Map<string, boolean>();
   public connectionNotifications$ = new BehaviorSubject<ConnectionNotification[]>([]);
+  public notifications$ = new BehaviorSubject<Notification[]>([]);
 
   constructor(private http: HttpClient) {}
 
@@ -190,6 +198,32 @@ export class SignalrService {
       alert(message);
       this.hubConnection.stop();
       window.location.reload();
+    });
+
+    this.hubConnection.on('ReceiveNotification', (fromUser: string, message: string, isPrivate: boolean) => {
+      const notifications = this.notifications$.value;
+      const newNotification = {
+        fromUser,
+        message,
+        isPrivate,
+        timestamp: new Date()
+      };
+      notifications.push(newNotification);
+      this.notifications$.next(notifications);
+
+      setTimeout(() => {
+        const currentNotifications = this.notifications$.value;
+        const index = currentNotifications.findIndex(n => 
+          n.fromUser === fromUser && 
+          n.message === message && 
+          n.isPrivate === isPrivate &&
+          n.timestamp.getTime() === newNotification.timestamp.getTime()
+        );
+        if (index !== -1) {
+          currentNotifications.splice(index, 1);
+          this.notifications$.next(currentNotifications);
+        }
+      }, 5000);
     });
   }
 

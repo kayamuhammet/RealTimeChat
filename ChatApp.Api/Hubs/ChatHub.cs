@@ -29,6 +29,12 @@ public class ChatHub : Hub
         await _context.SaveChangesAsync();
 
         await Clients.All.SendAsync("ReceiveMessage", user, message);
+        
+        var otherUsers = _users.Where(u => u.Value.UserName != user);
+        foreach (var otherUser in otherUsers)
+        {
+            await Clients.Client(otherUser.Key).SendAsync("ReceiveNotification", user, message, false);
+        }
     }
 
     public async Task SendPrivateMessage(string fromUser, string toUser, string message)
@@ -50,6 +56,8 @@ public class ChatHub : Hub
         {
             await Clients.Client(targetUser.Key).SendAsync("ReceivePrivateMessage", fromUser, toUser, message);
             await Clients.Caller.SendAsync("ReceivePrivateMessage", fromUser, toUser, message);
+            
+            await Clients.Client(targetUser.Key).SendAsync("ReceiveNotification", fromUser, message, true);
         }
     }
 

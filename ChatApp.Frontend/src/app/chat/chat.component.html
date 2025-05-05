@@ -1,4 +1,16 @@
 <div class="chat-container">
+  <div class="notifications-container">
+    <ng-container *ngFor="let notification of signalRService.notifications$ | async">
+      <div class="top-notification" [ngClass]="{'private': notification.isPrivate}">
+        <span class="notification-content">
+          <strong>{{ notification.fromUser }}</strong> 
+          {{ notification.isPrivate ? 'size özel mesaj gönderdi:' : 'size yeni bir mesaj gönderdi:' }} 
+          {{ notification.message }}
+        </span>
+      </div>
+    </ng-container>
+  </div>
+
   <div class="chat-header">
     <h2>Gerçek Zamanlı Sohbet</h2>
     <div class="user-input" *ngIf="!isConnected">
