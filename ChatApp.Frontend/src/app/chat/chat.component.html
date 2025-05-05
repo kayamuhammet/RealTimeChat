@@ -36,8 +36,13 @@
 
       <div class="chat-messages">
         <div *ngIf="!isPrivateChat">
-          <div *ngFor="let msg of signalRService.messages" class="message">
-            <strong>{{ msg.user }}:</strong> {{ msg.message }}
+          <div *ngFor="let msg of signalRService.messages" 
+               class="message" 
+               [ngClass]="{'my-message': msg.user === username}">
+            <span [ngClass]="{'message-container': msg.user === username}">
+              <strong class="user-name-chat">{{ msg.user }}:</strong> 
+              <span class="message-content">{{ msg.message }}</span>
+            </span>
           </div>
           <div *ngFor="let user of signalRService.users$ | async" class="typing-indicator">
             <span *ngIf="signalRService.typingUsers.get(user.userName) && user.userName !== username">
@@ -46,8 +51,12 @@
           </div>
         </div>
         <div *ngIf="isPrivateChat">
-          <div *ngFor="let msg of getPrivateMessages()" class="message private">
-            <strong>{{ msg.fromUser }} -> {{ msg.toUser }}:</strong> {{ msg.message }}
+          <div *ngFor="let msg of getPrivateMessages()" 
+               class="message private" 
+               [ngClass]="{'my-message': msg.fromUser === username}">
+               <span [ngClass]="{'message-container': msg.fromUser === username}">
+                <strong class="from-user">{{ msg.fromUser }}:</strong> {{ msg.message }}
+               </span>
           </div>
           <div class="typing-indicator">
             <span *ngIf="selectedUser && signalRService.typingUsers.get(selectedUser)">

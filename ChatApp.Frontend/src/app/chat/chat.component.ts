@@ -16,7 +16,6 @@ export class ChatComponent implements OnInit {
   isConnected = false;
   isPrivateChat = false;
   selectedUser: string | null = null;
-  private typingTimeout: any;
 
   constructor(public signalRService: SignalrService) {}
 

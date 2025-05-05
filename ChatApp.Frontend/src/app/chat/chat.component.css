@@ -60,6 +60,10 @@ button:disabled {
   font-weight: bold;
 }
 
+.from-user{
+  color: rgb(255, 0, 0);
+}
+
 .status-indicator {
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
@@ -106,6 +110,7 @@ button:disabled {
 }
 
 .chat-messages {
+  background: #ffffff;
   flex: 1;
   height: 400px;
   overflow-y: auto;
@@ -117,12 +122,15 @@ button:disabled {
 .message {
   margin-bottom: 10px;
   padding: 5px;
+  border-radius: 4px;
 }
 
-.message.private {
-  background: #f0f0ff;
-  border-left: 3px solid #673ab7;
+.my-message {
+  text-align: right;
+  padding: 5px;
+  border-radius: 4px;
 }
+
 
 .typing-indicator {
   color: #666;
@@ -135,4 +143,14 @@ button:disabled {
 .userabs {
   color: #666;
   font-style: italic;
+}
+
+.message-content {
+  margin-left: 5px;
+}
+
+.message-container {
+  border-left: 3px solid #673ab7;
+  padding: 5px;
+  background-color: #d4edda;
 }
