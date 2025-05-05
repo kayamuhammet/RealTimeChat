@@ -477,6 +477,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # database
-*.db
+ChatApp.Api/chat.db
 *.db-shm
 *.db-wal

@@ -14,14 +14,15 @@
     <div class="user-list">
       <h3>Kullanıcılar</h3>
       <div class="user-item" *ngFor="let user of signalRService.users$ | async">
-        <span class="user-name">{{ user.userName }}</span>
-        <span class="status-indicator" [class.online]="user.isOnline" [class.offline]="!user.isOnline">
-          {{ user.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
-        </span>
+        <div class="user-info">
+          <span class="user-name">{{ user.userName }}</span>
+          <span class="status-indicator" [class.online]="user.isOnline" [class.offline]="!user.isOnline"></span>
+        </div>
         <button *ngIf="user.isOnline && user.userName !== username" 
                 (click)="startPrivateChat(user.userName)"
-                class="private-chat-btn">
-          Özel Mesaj
+                class="private-chat-btn"
+                title="Özel Mesaj">
+          +
         </button>
       </div>
     </div>
@@ -36,6 +37,11 @@
 
       <div class="chat-messages">
         <div *ngIf="!isPrivateChat">
+          <div *ngFor="let notification of signalRService.connectionNotifications$ | async" 
+               class="connection-notification"
+               [ngClass]="{'connected': notification.isConnected, 'disconnected': !notification.isConnected}">
+            {{ notification.userName }} {{ notification.isConnected ? 'sohbete katıldı' : 'sohbetten ayrıldı' }}
+          </div>
           <div *ngFor="let msg of signalRService.messages" 
                class="message" 
                [ngClass]="{'my-message': msg.user === username}">

@@ -71,25 +71,40 @@ public class ChatHub : Hub
     public override async Task OnConnectedAsync()
     {
         var userName = Context.GetHttpContext()?.Request.Query["user"].ToString() ?? "Anonymous";
-        var userStatus = new UserStatus
+        
+        var existingUser = _users.Values.FirstOrDefault(u => u.UserName == userName);
+        if (existingUser != null)
         {
-            UserName = userName,
-            IsOnline = true,
-            LastSeen = DateTime.UtcNow
-        };
+            existingUser.IsOnline = true;
+            existingUser.LastSeen = DateTime.UtcNow;
+            existingUser.ConnectionId = Context.ConnectionId;
+            _users.TryAdd(Context.ConnectionId, existingUser);
+        }
+        else
+        {
+            var userStatus = new UserStatus
+            {
+                UserName = userName,
+                IsOnline = true,
+                LastSeen = DateTime.UtcNow,
+                ConnectionId = Context.ConnectionId
+            };
+            _users.TryAdd(Context.ConnectionId, userStatus);
+        }
 
-        _users.TryAdd(Context.ConnectionId, userStatus);
         await Clients.All.SendAsync("UserStatusChanged", _users.Values.ToList());
+        await Clients.All.SendAsync("ConnectionNotification", userName, true, DateTime.UtcNow);
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if (_users.TryRemove(Context.ConnectionId, out var userStatus))
+        if (_users.TryGetValue(Context.ConnectionId, out var userStatus))
         {
             userStatus.IsOnline = false;
             userStatus.LastSeen = DateTime.UtcNow;
             await Clients.All.SendAsync("UserStatusChanged", _users.Values.ToList());
+            await Clients.All.SendAsync("ConnectionNotification", userStatus.UserName, false, DateTime.UtcNow);
         }
         await base.OnDisconnectedAsync(exception);
     }

@@ -22,6 +22,12 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface ConnectionNotification {
+  userName: string;
+  isConnected: boolean;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -35,6 +41,7 @@ export class SignalrService {
   public privateMessages: PrivateMessage[] = [];
   public users$ = new BehaviorSubject<UserStatus[]>([]);
   public typingUsers = new Map<string, boolean>();
+  public connectionNotifications$ = new BehaviorSubject<ConnectionNotification[]>([]);
 
   constructor(private http: HttpClient) {}
 
@@ -149,6 +156,30 @@ export class SignalrService {
 
     this.hubConnection.on('UserTypingStatusChangedPrivate', (fromUser: string, isTyping: boolean) => {
       this.typingUsers.set(fromUser, isTyping);
+    });
+
+    this.hubConnection.on('ConnectionNotification', (userName: string, isConnected: boolean, timestamp: Date) => {
+      const notifications = this.connectionNotifications$.value;
+      const newNotification = {
+        userName,
+        isConnected,
+        timestamp: new Date(timestamp)
+      };
+      notifications.push(newNotification);
+      this.connectionNotifications$.next(notifications);
+
+      setTimeout(() => {
+        const currentNotifications = this.connectionNotifications$.value;
+        const index = currentNotifications.findIndex(n => 
+          n.userName === userName && 
+          n.isConnected === isConnected && 
+          n.timestamp.getTime() === newNotification.timestamp.getTime()
+        );
+        if (index !== -1) {
+          currentNotifications.splice(index, 1);
+          this.connectionNotifications$.next(currentNotifications);
+        }
+      }, 5000);
     });
   }
 
