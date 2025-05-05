@@ -7,19 +7,56 @@ namespace ChatApp.Api.Controllers;
 [Route("api/[controller]")]
 public class ChatController : ControllerBase
 {
-    public readonly AppDbContext _context;
+    private readonly AppDbContext _context;
 
     public ChatController(AppDbContext context)
     {
         _context = context;
     }
 
-
-    public IActionResult GetMessages()
+    [HttpGet("messages")]
+    public IActionResult GetMessages([FromQuery] int count = 50)
     {
         var messages = _context.Messages
-            .OrderByDescending(m => m.Timestamp)
-            .Take(50)
+            .Where(m => !m.IsPrivate)
+            .OrderBy(m => m.Timestamp)
+            .Take(count)
+            .ToList();
+
+        return Ok(messages);
+    }
+
+    [HttpGet("messages/user/{username}")]
+    public IActionResult GetUserMessages(string username, [FromQuery] int count = 50)
+    {
+        var messages = _context.Messages
+            .Where(m => m.User == username && !m.IsPrivate)
+            .OrderBy(m => m.Timestamp)
+            .Take(count)
+            .ToList();
+
+        return Ok(messages);
+    }
+
+    [HttpGet("messages/private/{username}")]
+    public IActionResult GetPrivateMessages(string username, [FromQuery] int count = 50)
+    {
+        var messages = _context.Messages
+            .Where(m => m.IsPrivate && (m.User == username || m.ToUser == username))
+            .OrderBy(m => m.Timestamp)
+            .Take(count)
+            .ToList();
+
+        return Ok(messages);
+    }
+
+    [HttpGet("messages/search")]
+    public IActionResult SearchMessages([FromQuery] string query, [FromQuery] int count = 50)
+    {
+        var messages = _context.Messages
+            .Where(m => m.Message.Contains(query) && !m.IsPrivate)
+            .OrderBy(m => m.Timestamp)
+            .Take(count)
             .ToList();
 
         return Ok(messages);

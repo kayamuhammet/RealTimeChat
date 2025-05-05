@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 export interface UserStatus {
   userName: string;
@@ -15,6 +16,12 @@ export interface PrivateMessage {
   timestamp: Date;
 }
 
+export interface ChatMessage {
+  user: string;
+  message: string;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -22,11 +29,79 @@ export class SignalrService {
 
   private hubConnection!: signalR.HubConnection;
   private username: string = '';
+  private apiUrl = 'http://localhost:5011/api/chat';
   
-  public messages: {user: string, message: string}[] = [];
+  public messages: ChatMessage[] = [];
   public privateMessages: PrivateMessage[] = [];
   public users$ = new BehaviorSubject<UserStatus[]>([]);
   public typingUsers = new Map<string, boolean>();
+
+  constructor(private http: HttpClient) {}
+
+  public async loadMessageHistory(count: number = 50) {
+    try {
+      const response = await this.http.get<any[]>(`${this.apiUrl}/messages?count=${count}`).toPromise();
+      if (response) {
+        this.messages = response.map(msg => ({
+          user: msg.user,
+          message: msg.message,
+          timestamp: new Date(msg.timestamp)
+        })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      }
+    } catch (error) {
+      console.error('Mesaj geçmişi yüklenirken hata oluştu:', error);
+    }
+  }
+
+  public async loadPrivateMessageHistory(username: string, count: number = 50) {
+    try {
+      const response = await this.http.get<any[]>(`${this.apiUrl}/messages/private/${username}?count=${count}`).toPromise();
+      if (response) {
+        this.privateMessages = response.map(msg => ({
+          fromUser: msg.user,
+          toUser: msg.toUser,
+          message: msg.message,
+          timestamp: new Date(msg.timestamp)
+        })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      }
+    } catch (error) {
+      console.error('Özel mesaj geçmişi yüklenirken hata oluştu:', error);
+    }
+  }
+
+  public async loadUserMessageHistory(username: string, count: number = 50) {
+    try {
+      const response = await this.http.get<any[]>(`${this.apiUrl}/messages/user/${username}?count=${count}`).toPromise();
+      if (response) {
+        return response.map(msg => ({
+          user: msg.user,
+          message: msg.message,
+          timestamp: new Date(msg.timestamp)
+        })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      }
+      return [];
+    } catch (error) {
+      console.error('Kullanıcı mesaj geçmişi yüklenirken hata oluştu:', error);
+      return [];
+    }
+  }
+
+  public async searchMessages(query: string, count: number = 50) {
+    try {
+      const response = await this.http.get<any[]>(`${this.apiUrl}/messages/search?query=${query}&count=${count}`).toPromise();
+      if (response) {
+        return response.map(msg => ({
+          user: msg.user,
+          message: msg.message,
+          timestamp: new Date(msg.timestamp)
+        })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      }
+      return [];
+    } catch (error) {
+      console.error('Mesaj araması yapılırken hata oluştu:', error);
+      return [];
+    }
+  }
 
   public startConnection(userName: string)
   {
@@ -40,11 +115,18 @@ export class SignalrService {
       .then(() => {
         console.log('SignalR bağlantısı başlatıldı.');
         this.getUserList();
+        this.loadMessageHistory();
+        this.loadPrivateMessageHistory(userName);
       })
       .catch(err => console.error('SignalR bağlantı hatası:', err));
     
     this.hubConnection.on('ReceiveMessage', (user: string, message: string) => {
-      this.messages.push({user, message});
+      this.messages.push({
+        user,
+        message,
+        timestamp: new Date()
+      });
+      this.messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
     });
 
     this.hubConnection.on('ReceivePrivateMessage', (fromUser: string, toUser: string, message: string) => {
@@ -54,6 +136,7 @@ export class SignalrService {
         message,
         timestamp: new Date()
       });
+      this.privateMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
     });
 
     this.hubConnection.on('UserStatusChanged', (users: UserStatus[]) => {
@@ -96,6 +179,4 @@ export class SignalrService {
     this.hubConnection.invoke('GetUserList')
       .catch(err => console.error('Kullanıcı listesi alınamadı:', err));
   }
-
-  constructor() { }
 }

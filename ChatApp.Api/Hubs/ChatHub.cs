@@ -1,20 +1,50 @@
 using Microsoft.AspNetCore.SignalR;
 using ChatApp.Api.Models;
 using System.Collections.Concurrent;
+using ChatApp.Api.Data;
 
 namespace ChatApp.Api.Hubs;
 
 public class ChatHub : Hub
 {
     private static readonly ConcurrentDictionary<string, UserStatus> _users = new();
+    private readonly AppDbContext _context;
+
+    public ChatHub(AppDbContext context)
+    {
+        _context = context;
+    }
 
     public async Task SendMessage(string user, string message)
     {
+        var chatMessage = new ChatMessage
+        {
+            User = user,
+            Message = message,
+            Timestamp = DateTime.UtcNow,
+            IsPrivate = false
+        };
+
+        _context.Messages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
         await Clients.All.SendAsync("ReceiveMessage", user, message);
     }
 
     public async Task SendPrivateMessage(string fromUser, string toUser, string message)
     {
+        var chatMessage = new ChatMessage
+        {
+            User = fromUser,
+            Message = message,
+            Timestamp = DateTime.UtcNow,
+            IsPrivate = true,
+            ToUser = toUser
+        };
+
+        _context.Messages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
         var targetUser = _users.FirstOrDefault(u => u.Value.UserName == toUser);
         if (targetUser.Value != null)
         {
