@@ -2,6 +2,8 @@
 
 This project is a modern chat application with real-time messaging features. It is developed using .NET Core Web API for the backend and Angular for the frontend.
 
+https://github.com/user-attachments/assets/c31f2777-7f6a-4ca2-a166-435670dad59b
+
 ## 🚀 Features
 
 - Real-time messaging
